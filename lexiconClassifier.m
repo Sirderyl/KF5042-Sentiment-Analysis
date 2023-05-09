@@ -2,13 +2,7 @@ clc; clear;
 
 %% Section 1 - Read positive and negative words from dictionary
 
-filePositive = fopen(fullfile('opinion-lexicon-English', 'positive-words.txt'));
-fileNegative = fopen(fullfile('opinion-lexicon-English', 'negative-words.txt'));
-posScan = textscan(filePositive, '%s', 'CommentStyle', ';'); % skip comment lines
-negScan = textscan(fileNegative, '%s', 'CommentStyle', ';');
-positiveWords = string(posScan{1});
-negativeWords = string(negScan{1});
-fclose all;
+loadLexicon; % Run loadLexicon.m script
 
 % Define words_hash as a content addressable store (dictionary)
 words_hash = java.util.Hashtable;
@@ -27,15 +21,11 @@ end
 
 %% Section 2 - Load the dataset
 
-%filename = "rt_dataset.csv";
-filename = "IMDB_Dataset.csv";
+% Comment/Uncomment to select dataset for analysis
+loadRTDataset;
+%loadIMDBDataset;
 
-dataReviews = readtable(filename, 'TextType', 'string');
-textData = dataReviews.review; % get review text
-actualScore = dataReviews.score; % get review sentiment
-
-sentences = preprocessText(textData);
-fprintf('File: %s, Sentences: %d \n', filename, size(sentences));
+%fprintf('File: %s, Sentences: %d \n', filename, size(sentences));
 
 %% Section 3 - Evaluating the reviews
 
@@ -55,8 +45,8 @@ for i = 1 : sentences.length
             sentimentScore(i) = sentimentScore(i) + words_hash.get(docwords(j));
         end
     end
-    fprintf('Sent: %d, words: %s, FoundScore: %d, GoldScore: %d\n', i, ...
-        joinWords(sentences(i)), sentimentScore(i), actualScore(i));
+    fprintf('Review No.: %d, Text: %s, DetectedScore: %d, TrueScore: %d\n', ...
+        i, joinWords(sentences(i)), sentimentScore(i), actualScore(i));
     if sentimentScore(i) > 0 && actualScore(i) == 1
         tp = tp + 1;
     end

@@ -2,18 +2,20 @@ clc; clear;
 
 %% Section 1 - Importing dataset
 
-%filename = "rt_dataset.csv";
-filename = "IMDB_Dataset.csv";
+filename = "rt_dataset.csv";
 reviewData = readtable(filename, 'TextType', 'string');
 
+% Convert sentiment polarity to categorical data to fit LSTM
 reviewData.score = categorical(reviewData.score);
 
 %% Section 2 - Partitioning
 
+% Split 80% training 20% testing
 cvp = cvpartition(reviewData.score, 'HoldOut', 0.2);
 dataTrain = reviewData(training(cvp), :);
 dataTest = reviewData(test(cvp), :);
 
+%sentTrain and sentTest will be further processed to XTrain and XTest
 sentTrain = dataTrain.review;
 sentTest = dataTest.review;
 YTrain = dataTrain.score;
@@ -28,6 +30,8 @@ sentencesTest = preprocessTextLSTM(sentTest);
 
 enc = wordEncoding(sentencesTrain);
 
+% Histogram for sentence length determination
+
 % sentencesLength = doclength(sentencesTrain);
 % figure
 % histogram(sentencesLength)
@@ -35,8 +39,7 @@ enc = wordEncoding(sentencesTrain);
 % xlabel("Length")
 % ylabel("Number of sentences")
 
-% sentLength = 35; % For Rotten Tomatoes dataset
-sentLength = 400; % For IMDB dataset
+sentLength = 35; % Truncate sentences to same length without losing much data
 XTrain = doc2sequence(enc, sentencesTrain, 'Length', sentLength);
 XTest = doc2sequence(enc, sentencesTest, 'Length', sentLength);
 
@@ -58,7 +61,7 @@ layers = [ ...
     classificationLayer];
 
 options = trainingOptions('adam', ...
-    'MiniBatchSize', 128, ...
+    'MiniBatchSize', 16, ...
     'GradientThreshold', 2, ...
     'Shuffle', 'every-epoch', ...
     'ValidationData', {XTest, YTest}, ...
